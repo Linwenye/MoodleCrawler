@@ -6,7 +6,7 @@ import sqlalchemy
 # See: https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 
 import pymongo
-from MoodleCrawler import settings
+from scrapy.exceptions import DropItem
 
 
 class MongoPipeline(object):
@@ -32,10 +32,24 @@ class MongoPipeline(object):
         self.client.close()
 
     def process_item(self, item, spider):
+        cursor = self.collection.find()
+        existed = [x for x in cursor]
+        existed_keys = [x['key'] for x in existed]
         if item:
-            self.collection.insert_one(dict(item))
-            print(item)
+            # new course: insert directly
+            if item['key'] not in existed_keys:
+                self.collection.insert_one(dict(item))
+
+            else:
+                same = True
+                # TODO if not, check every item
+
+                if same:
+                    raise DropItem("%s existed" % item['name'])
+
+                # TODO if changed, delete the former one and insert new
+                else:
+                    pass
         else:
             print('wrong')
-            print(item)
         return item

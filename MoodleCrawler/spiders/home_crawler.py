@@ -3,7 +3,7 @@ from scrapy.utils.response import open_in_browser
 from scrapy.http import Request, FormRequest
 from MoodleCrawler import config
 import re
-import pprint
+from pprint import pprint
 import json
 from MoodleCrawler.items import Course
 from MoodleCrawler.items import CourseItem
@@ -28,18 +28,18 @@ class HomeCrawler(scrapy.Spider):
     def after_login(self, response):
         self.sesskey = re.search('"sesskey":"([^,]*)"', response.text).group(1)
         element_ids = response.css('.type_course.depth_3.contains_branch p::attr(id)').extract()
-        # for element_id in element_ids: # TODO: it's just for debugging to only just use one item
-        element_id = element_ids[0]
-        yield FormRequest(url='http://218.94.159.99/lib/ajax/getnavbranch.php',
-                          formdata={
-                              'elementid': element_id,
-                              'id': element_id.split('_')[-1],
-                              'type': element_id.split('_')[-2],
-                              'sesskey': self.sesskey,
-                              'instance': '4'
-                          },
-                          callback=self.get_branch,
-                          )
+        # element_id = element_ids[0]
+        for element_id in element_ids:
+            yield FormRequest(url='http://218.94.159.99/lib/ajax/getnavbranch.php',
+                              formdata={
+                                  'elementid': element_id,
+                                  'id': element_id.split('_')[-1],
+                                  'type': element_id.split('_')[-2],
+                                  'sesskey': self.sesskey,
+                                  'instance': '4'
+                              },
+                              callback=self.get_branch,
+                              )
         # for course_name in courses:
         #     print(course_name)
         # links = response.css('.course_title h2.title a::attr(href)').extract()
@@ -67,7 +67,6 @@ class HomeCrawler(scrapy.Spider):
                                       },
                                       callback=self.get_meta,
                                       )
-                print(course_dict['name'])
                 request.meta['course'] = course
                 request.meta['lenth'] = len(course_dict['children'])
                 yield request
@@ -79,15 +78,22 @@ class HomeCrawler(scrapy.Spider):
         course_sub1['name'] = branch_dict['name']
         course_sub1['key'] = branch_dict['key']
         course_sub1['children'] = []
-        for item_sub2 in branch_dict['children']:
-            course_sub2 = CourseItem()
-            course_sub2['name'] = item_sub2['name']
-            course_sub2['key'] = item_sub2['key']
-            course_sub1['children'].append(dict(course_sub2))
-
+        if 'children' in branch_dict.keys():
+            # TODO add diretory scrapying and
+            for item_sub2 in branch_dict['children']:
+                course_sub2 = CourseItem()
+                if isinstance(item_sub2, str):
+                    course_sub2['name'] = item_sub2
+                else:
+                    course_sub2['name'] = item_sub2['name']
+                    course_sub2['key'] = item_sub2['key']
+                course_sub1['children'].append(dict(course_sub2))
+        else:
+            print(branch_dict['name'])
         course['children'].append(dict(course_sub1))
         if response.meta['lenth'] - 2 == len(course['children']):  # sub the two not ajax
-            pprint.pprint(course)
+            # pprint.pprint(course)
+            print(course['name'])
             return course
 
     def parse(self, response):
