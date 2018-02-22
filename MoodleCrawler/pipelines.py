@@ -7,6 +7,8 @@ import sqlalchemy
 
 import pymongo
 from scrapy.exceptions import DropItem
+from pprint import pprint
+from scrapy.mail import MailSender
 
 
 class MongoPipeline(object):
@@ -15,6 +17,7 @@ class MongoPipeline(object):
     def __init__(self, mongo_uri, mongo_db):
         self.mongo_uri = mongo_uri
         self.mongo_db = mongo_db
+        self.mailer = MailSender()
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -32,24 +35,39 @@ class MongoPipeline(object):
         self.client.close()
 
     def process_item(self, item, spider):
-        cursor = self.collection.find()
+        cursor = self.collection.find({'key': item['key']})
         existed = [x for x in cursor]
-        existed_keys = [x['key'] for x in existed]
         if item:
             # new course: insert directly
-            if item['key'] not in existed_keys:
+            if not existed:
+                print('insert new one', item['name'])
                 self.collection.insert_one(dict(item))
 
             else:
-                same = True
-                # TODO if not, check every item
-
-                if same:
+                existed = existed[0]
+                if item['children'] == existed['children']:
                     raise DropItem("%s existed" % item['name'])
 
-                # TODO if changed, delete the former one and insert new
                 else:
-                    pass
+                    mail_body = ''
+                    for sub_item1, sub_item2 in zip(item['children'], existed['children']):
+                        if not sub_item1 == sub_item2:
+                            list1 = sub_item1['children']
+                            list2 = sub_item2['children']
+
+                            for tt in list1:
+                                if tt not in list2:
+                                    new_message = "新的" + sub_item2['name'] + ': ' + tt['name']
+                                    mail_body = mail_body + '\n' + new_message
+                                    print(new_message)
+
+                    # if changed, delete the former one and insert new
+                    self.collection.delete_one({'key': item['key']})
+                    self.collection.insert_one(dict(item))
+
+                    # send the email to inform
+                    self.mailer.send(to=["151250093@smail.nju.edu.cn"], subject="Moodle Update", body=mail_body)
+
         else:
             print('wrong')
         return item

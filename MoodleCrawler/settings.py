@@ -72,7 +72,7 @@ ITEM_PIPELINES = {
     'MoodleCrawler.pipelines.MongoPipeline': 300,
 }
 
-LOG_LEVEL = 'INFO'
+LOG_LEVEL = 'WARNING'
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://doc.scrapy.org/en/latest/topics/autothrottle.html
 #AUTOTHROTTLE_ENABLED = True

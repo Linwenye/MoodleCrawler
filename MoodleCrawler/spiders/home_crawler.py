@@ -28,18 +28,17 @@ class HomeCrawler(scrapy.Spider):
     def after_login(self, response):
         self.sesskey = re.search('"sesskey":"([^,]*)"', response.text).group(1)
         element_ids = response.css('.type_course.depth_3.contains_branch p::attr(id)').extract()
-        # element_id = element_ids[0]
-        for element_id in element_ids:
-            yield FormRequest(url='http://218.94.159.99/lib/ajax/getnavbranch.php',
-                              formdata={
-                                  'elementid': element_id,
-                                  'id': element_id.split('_')[-1],
-                                  'type': element_id.split('_')[-2],
-                                  'sesskey': self.sesskey,
-                                  'instance': '4'
-                              },
-                              callback=self.get_branch,
-                              )
+        element_id = element_ids[0]
+        # for element_id in element_ids:
+        yield FormRequest(url='http://218.94.159.99/lib/ajax/getnavbranch.php',
+                          formdata={
+                              'elementid': element_id,
+                              'id': element_id.split('_')[-1],
+                              'type': element_id.split('_')[-2],
+                              'sesskey': self.sesskey,
+                              'instance': '4'
+                          },
+                          callback=self.get_branch)
         # for course_name in courses:
         #     print(course_name)
         # links = response.css('.course_title h2.title a::attr(href)').extract()
@@ -88,12 +87,10 @@ class HomeCrawler(scrapy.Spider):
                     course_sub2['name'] = item_sub2['name']
                     course_sub2['key'] = item_sub2['key']
                 course_sub1['children'].append(dict(course_sub2))
-        else:
-            print(branch_dict['name'])
         course['children'].append(dict(course_sub1))
         if response.meta['lenth'] - 2 == len(course['children']):  # sub the two not ajax
             # pprint.pprint(course)
-            print(course['name'])
+            print(course['name'], '爬取完成')
             return course
 
     def parse(self, response):
