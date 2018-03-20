@@ -97,3 +97,7 @@ MONGO_URI = 'mongodb://localhost:27017/'
 MONGO_DATABASE = "moodle"
 RETRY_ENABLED = True
 RETRY_TIMES = 3
+
+MAIL_HOST = 'smtp.qq.com'
+# MAIL_HOST = 'smtp.gmail.com'
+MAIL_PORT = 465

@@ -18,3 +18,4 @@ class Course(scrapy.Item):
 class CourseItem(scrapy.Item):
     name = scrapy.Field()
     key = scrapy.Field()
+    link = scrapy.Field()

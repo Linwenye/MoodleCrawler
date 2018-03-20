@@ -7,8 +7,7 @@ import sqlalchemy
 
 import pymongo
 from scrapy.exceptions import DropItem
-from pprint import pprint
-from scrapy.mail import MailSender
+from MoodleCrawler.mail import send_mail
 
 
 class MongoPipeline(object):
@@ -17,7 +16,6 @@ class MongoPipeline(object):
     def __init__(self, mongo_uri, mongo_db):
         self.mongo_uri = mongo_uri
         self.mongo_db = mongo_db
-        self.mailer = MailSender()
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -49,7 +47,7 @@ class MongoPipeline(object):
                     raise DropItem("%s existed" % item['name'])
 
                 else:
-                    mail_body = ''
+                    mail_body = '课程 ' + item['name'] + ' 有了新的动态：'
                     for sub_item1, sub_item2 in zip(item['children'], existed['children']):
                         if not sub_item1 == sub_item2:
                             list1 = sub_item1['children']
@@ -57,7 +55,7 @@ class MongoPipeline(object):
 
                             for tt in list1:
                                 if tt not in list2:
-                                    new_message = "新的" + sub_item2['name'] + ': ' + tt['name']
+                                    new_message = "- 新的" + sub_item2['name'] + ': ' + tt['name'] + '   链接：' + tt['link']
                                     mail_body = mail_body + '\n' + new_message
                                     print(new_message)
 
@@ -66,7 +64,7 @@ class MongoPipeline(object):
                     self.collection.insert_one(dict(item))
 
                     # send the email to inform
-                    self.mailer.send(to=["151250093@smail.nju.edu.cn"], subject="Moodle Update", body=mail_body)
+                    send_mail("Moodle Update", mail_body)
 
         else:
             print('wrong')
