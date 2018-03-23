@@ -19,6 +19,6 @@ def send_mail(title, message):
     server_ssl.ehlo()  # optional, called by login()
     server_ssl.login(user, password)
     # ssl server doesn't support or need tls, so don't call server_ssl.starttls()
-    server_ssl.sendmail(from_addr=user, to_addrs=recipient, msg=msg.as_string())
+    server_ssl.send_message(from_addr=user, to_addrs=recipient, msg=msg.as_string())
     server_ssl.close()
     print('successfully sent the mail')
