@@ -8,6 +8,7 @@ import sqlalchemy
 import pymongo
 from scrapy.exceptions import DropItem
 from MoodleCrawler.mail import send_mail
+from . import config
 
 
 class MongoPipeline(object):
@@ -27,6 +28,7 @@ class MongoPipeline(object):
     def open_spider(self, spider):
         self.client = pymongo.MongoClient(self.mongo_uri)
         self.db = self.client[self.mongo_db]
+        self.client['admin'].authenticate(config.MONGO_USER, config.MONGO_PASSWORD)
         self.collection = self.db[self.collection_name]
 
     def close_spider(self, spider):
