@@ -29,6 +29,8 @@ class HomeCrawler(scrapy.Spider):
                             )]
 
     def after_login(self, response):
+        """get every course id and get the first branch of it, which will be 课件,作业,etc"""
+        # TODO: after a semester end, stop crawl it anymore
         self.sesskey = re.search('"sesskey":"([^,]*)"', response.text).group(1)
         element_ids = response.css('.type_course.depth_3.contains_branch p::attr(id)').extract()
         # element_id = element_ids[0]
@@ -49,6 +51,7 @@ class HomeCrawler(scrapy.Spider):
         #     yield Request(url=link)
 
     def get_branch(self, response):
+        """read the first branch of it, which will be 课件,作业,etc. And request meta data, 具体作业，具体课件"""
         course_dict = json.loads(response.text)
         course = Course()
         course['name'] = course_dict['name']
