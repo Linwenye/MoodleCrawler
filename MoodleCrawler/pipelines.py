@@ -41,7 +41,7 @@ class MongoPipeline(object):
             # new course: insert directly
             if not existed:
                 print('insert new one', item['name'])
-                self.collection.insert_one(dict(item))
+                # self.collection.insert_one(dict(item))
 
             else:
                 existed = existed[0]
@@ -50,20 +50,28 @@ class MongoPipeline(object):
 
                 else:
                     mail_body = '课程 ' + item['name'] + ' 有了新的动态：'
-                    for sub_item1, sub_item2 in zip(item['children'], existed['children']):
-                        if not sub_item1 == sub_item2:
-                            list1 = sub_item1['children']
-                            list2 = sub_item2['children']
+                    # for sub_item1, sub_item2 in zip(item['children'], existed['children']):
+                    for sub_new in item['children']:
 
-                            for tt in list1:
-                                if tt not in list2:
-                                    new_message = "- 新的" + sub_item2['name'] + ': ' + tt['name'] + '   链接：' + tt['link']
+                        sub_exist = None
+                        for query_item in existed['children']:
+                            if sub_new['name'] == query_item['name']:
+                                sub_exist = query_item
+                        if not sub_new == sub_exist:
+                            list_new = sub_new['children']
+                            if sub_exist:
+                                list_exist = sub_exist['children']
+                            else:
+                                list_exist = []
+                            for tt in list_new:
+                                if tt not in list_exist:
+                                    new_message = "- 新的" + sub_new['name'] + ': ' + tt['name'] + '   链接：' + tt['link']
                                     mail_body = mail_body + '\n' + new_message
                                     print(new_message)
 
                     # if changed, delete the former one and insert new
-                    self.collection.delete_one({'key': item['key']})
-                    self.collection.insert_one(dict(item))
+                    # self.collection.delete_one({'key': item['key']})
+                    # self.collection.insert_one(dict(item))
 
                     # send the email to inform
                     send_mail("Moodle Update", mail_body)
