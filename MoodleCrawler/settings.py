@@ -30,7 +30,9 @@ DOWNLOAD_TIMEOUT = 20
 # The download delay setting will honor only one of:
 # CONCURRENT_REQUESTS_PER_DOMAIN = 16
 # CONCURRENT_REQUESTS_PER_IP = 16
-DUPEFILTER_DEBUG = True
+
+# DUPEFILTER_DEBUG = True
+
 # Disable cookies (enabled by default)
 # COOKIES_ENABLED = False
 
@@ -72,7 +74,7 @@ ITEM_PIPELINES = {
     'MoodleCrawler.pipelines.MongoPipeline': 300,
 }
 
-LOG_LEVEL = 'DEBUG'
+LOG_LEVEL = 'ERROR'
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://doc.scrapy.org/en/latest/topics/autothrottle.html
 # AUTOTHROTTLE_ENABLED = True
