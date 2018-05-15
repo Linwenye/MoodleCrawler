@@ -7,7 +7,7 @@ import sqlalchemy
 
 import pymongo
 from scrapy.exceptions import DropItem
-from MoodleCrawler.mail import send_mail
+from MoodleCrawler import mail
 from . import config
 
 
@@ -70,7 +70,7 @@ class MongoPipeline(object):
                                     # print(new_message)
 
                     # send the email to inform
-                    send_mail("Moodle Update", item['email'], item['key'], mail_body)
+                    mail.send_mail("Moodle Update", item['email'], item['key'], mail_body)
 
                     # if changed, delete the former one and insert new
                     self.collection.delete_one({'key': item['key']})
