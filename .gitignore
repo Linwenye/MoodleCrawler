@@ -46,3 +46,4 @@ Temporary Items
 .idea/
 MoodleCrawler/config.py
 *__pycache__/
+MoodleCrawler/test.py

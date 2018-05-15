@@ -1,49 +1,71 @@
 import scrapy
 from scrapy.utils.response import open_in_browser
 from scrapy.http import Request, FormRequest
-from MoodleCrawler import config
 import re
 from pprint import pprint
 import json
 from MoodleCrawler.items import Course
 from MoodleCrawler.items import CourseItem
 from scrapy.loader import ItemLoader
-from scrapy.mail import MailSender
-from MoodleCrawler import settings
+from MoodleCrawler import settings, config, utils, mail
+from pymongo import MongoClient
 
 
 class HomeCrawler(scrapy.Spider):
     name = 'home'
 
-    start_urls = ['http://218.94.159.99/my/']
+    client = MongoClient(settings.MONGO_URI)
+    client['admin'].authenticate(config.MONGO_USER, config.MONGO_PASSWORD)
+    user_db = client[settings.MONGO_DATABASE]['users']
+    users = user_db.find()
+
+    crawled = set()
 
     def start_requests(self):
-
-        return [FormRequest(url='http://218.94.159.99/login/index.php',
-                            formdata={
-                                'username': config.username,
-                                'password': config.password,
-                                'rememberusername': '1'
-                            },
-                            callback=self.after_login,
-                            )]
+        for i, user in enumerate(self.users):
+            recipient = user['email']
+            print(user['email'])
+            request = FormRequest(url='http://218.94.159.99/login/index.php',
+                                  formdata={
+                                      'username': user['email'],
+                                      'password': utils.decrypt(user['password']),
+                                      'rememberusername': '1'
+                                  },
+                                  dont_filter=True,
+                                  meta={'cookiejar': i},
+                                  callback=self.after_login)
+            request.meta['recipient'] = recipient
+            yield request
 
     def after_login(self, response):
         """get every course id and get the first branch of it, which will be 课件,作业,etc"""
         # TODO: after a semester end, stop crawl it anymore
-        self.sesskey = re.search('"sesskey":"([^,]*)"', response.text).group(1)
+        sesskey = re.search('"sesskey":"([^,]*)"', response.text).group(1)
         element_ids = response.css('.type_course.depth_3.contains_branch p::attr(id)').extract()
         # element_id = element_ids[0]
         for element_id in element_ids:
-            yield FormRequest(url='http://218.94.159.99/lib/ajax/getnavbranch.php',
-                              formdata={
-                                  'elementid': element_id,
-                                  'id': element_id.split('_')[-1],
-                                  'type': element_id.split('_')[-2],
-                                  'sesskey': self.sesskey,
-                                  'instance': '4'
-                              },
-                              callback=self.get_branch)
+            course_id = element_id.split('_')[-1]
+            if course_id in self.crawled:
+                # if changed, send_email
+                print('crawled')
+                print(mail.changed_courses)
+                mail.send_mail("MoodleUpdate", response.meta['recipient'], course_id)
+                # continue
+            else:
+                request = FormRequest(url='http://218.94.159.99/lib/ajax/getnavbranch.php',
+                                      formdata={
+                                          'elementid': element_id,
+                                          'id': course_id,
+                                          'type': element_id.split('_')[-2],
+                                          'sesskey': sesskey,
+                                          'instance': '4'
+                                      },
+                                      meta={'cookiejar': response.meta['cookiejar']},
+                                      callback=self.get_branch)
+                print(response.meta['recipient'], ': first branch')
+                request.meta['sesskey'] = sesskey
+                request.meta['recipient'] = response.meta['recipient']
+                yield request
         # for course_name in courses:
         #     print(course_name)
         # links = response.css('.course_title h2.title a::attr(href)').extract()
@@ -57,7 +79,7 @@ class HomeCrawler(scrapy.Spider):
         course['name'] = course_dict['name']
         course['key'] = course_dict['key']
         course['children'] = []
-
+        course['email'] = response.meta['recipient']
         for child in course_dict['children']:
             if child['requiresajaxloading']:
                 element_id = child['id']
@@ -67,11 +89,14 @@ class HomeCrawler(scrapy.Spider):
                                           'elementid': element_id,
                                           'id': element_id.split('_')[-1],
                                           'type': element_id.split('_')[-2],
-                                          'sesskey': self.sesskey,
+                                          'sesskey': response.meta['sesskey'],
                                           'instance': '4'
                                       },
+                                      meta={'cookiejar': response.meta['cookiejar']},
                                       callback=self.get_meta,
                                       )
+                print(response.meta['recipient'], ': second branch')
+
                 request.meta['course'] = course
                 request.meta['lenth'] = len(course_dict['children'])
                 yield request
@@ -98,7 +123,9 @@ class HomeCrawler(scrapy.Spider):
         if response.meta['lenth'] - 2 == len(course['children']):  # sub the two not ajax
             # pprint.pprint(course)
             print(course['name'], '爬取完成')
-            return course
+            self.crawled.add(course['key'])
+
+            yield course
 
     def parse(self, response):
         pass

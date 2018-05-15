@@ -35,13 +35,14 @@ class MongoPipeline(object):
         self.client.close()
 
     def process_item(self, item, spider):
+
         cursor = self.collection.find({'key': item['key']})
         existed = [x for x in cursor]
         if item:
             # new course: insert directly
             if not existed:
                 print('insert new one', item['name'])
-                # self.collection.insert_one(dict(item))
+                self.collection.insert_one(dict(item))
 
             else:
                 existed = existed[0]
@@ -50,7 +51,6 @@ class MongoPipeline(object):
 
                 else:
                     mail_body = '课程 ' + item['name'] + ' 有了新的动态：'
-                    # for sub_item1, sub_item2 in zip(item['children'], existed['children']):
                     for sub_new in item['children']:
 
                         sub_exist = None
@@ -67,14 +67,15 @@ class MongoPipeline(object):
                                 if tt not in list_exist:
                                     new_message = "- 新的" + sub_new['name'] + ': ' + tt['name'] + '   链接：' + tt['link']
                                     mail_body = mail_body + '\n' + new_message
-                                    print(new_message)
-
-                    # if changed, delete the former one and insert new
-                    # self.collection.delete_one({'key': item['key']})
-                    # self.collection.insert_one(dict(item))
+                                    # print(new_message)
 
                     # send the email to inform
-                    send_mail("Moodle Update", mail_body)
+                    send_mail("Moodle Update", item['email'], item['key'], mail_body)
+
+                    # if changed, delete the former one and insert new
+                    self.collection.delete_one({'key': item['key']})
+                    del item['email']
+                    self.collection.insert_one(dict(item))
 
         else:
             print('wrong')

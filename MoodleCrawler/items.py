@@ -13,6 +13,7 @@ class Course(scrapy.Item):
     name = scrapy.Field()
     key = scrapy.Field()
     children = scrapy.Field()
+    email = scrapy.Field()
 
 
 class CourseItem(scrapy.Item):
