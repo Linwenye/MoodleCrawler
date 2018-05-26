@@ -41,7 +41,7 @@ class HomeCrawler(scrapy.Spider):
         """get every course id and get the first branch of it, which will be 课件,作业,etc"""
         # TODO: after a semester end, stop crawl it anymore
         sesskey = re.search('"sesskey":"([^,]*)"', response.text).group(1)
-        element_ids = response.css('.type_course.depth_3.contains_branch p::attr(id)').extract()
+        element_ids = response.css('.type_course.depth_3.contains_branch p::attr(id)').extract()[:10]
         # element_id = element_ids[0]
         for element_id in element_ids:
             course_id = element_id.split('_')[-1]

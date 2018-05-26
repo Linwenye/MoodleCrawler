@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import sqlalchemy
 # Define your item pipelines here
 #
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
@@ -30,27 +29,31 @@ class MongoPipeline(object):
         self.db = self.client[self.mongo_db]
         self.client['admin'].authenticate(config.MONGO_USER, config.MONGO_PASSWORD)
         self.collection = self.db[self.collection_name]
+        self.exist_courses = list(self.collection.find())
 
     def close_spider(self, spider):
         self.client.close()
 
     def process_item(self, item, spider):
 
-        cursor = self.collection.find({'key': item['key']})
-        existed = [x for x in cursor]
+        existed = None
+        for cc in self.exist_courses:
+            if cc['key'] == item['key']:
+                existed = cc
         if item:
             # new course: insert directly
             if not existed:
                 print('insert new one', item['name'])
+                del item['email']
                 self.collection.insert_one(dict(item))
 
             else:
-                existed = existed[0]
                 if item['children'] == existed['children']:
                     raise DropItem("%s existed" % item['name'])
 
                 else:
                     mail_body = '课程 ' + item['name'] + ' 有了新的动态：'
+                    new_message = None
                     for sub_new in item['children']:
 
                         sub_exist = None
@@ -70,7 +73,8 @@ class MongoPipeline(object):
                                     # print(new_message)
 
                     # send the email to inform
-                    mail.send_mail("Moodle Update", item['email'], item['key'], mail_body)
+                    if new_message:
+                        mail.send_mail("Moodle Update", item['email'], item['key'], mail_body)
 
                     # if changed, delete the former one and insert new
                     self.collection.delete_one({'key': item['key']})
