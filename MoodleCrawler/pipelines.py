@@ -46,6 +46,8 @@ class MongoPipeline(object):
                 print('insert new one', item['name'])
                 del item['email']
                 self.collection.insert_one(dict(item))
+                # ! update the cache
+                self.exist_courses.append(dict(item))
 
             else:
                 if item['children'] == existed['children']:
