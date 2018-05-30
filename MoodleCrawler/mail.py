@@ -13,13 +13,13 @@ password = config.mailpass
 
 def send_mail(title, recipient, course_key, message=None):
     if message:
-        _send_mail(title, message, recipient)
-        # print_mail(title, message, recipient)
+        # _send_mail(title, message, recipient)
+        print_mail(title, message, recipient)
         changed_courses[course_key] = message
     else:
         if course_key in changed_courses:
-            _send_mail(title, changed_courses[course_key], recipient)
-            # print_mail(title, changed_courses[course_key], recipient)
+            # _send_mail(title, changed_courses[course_key], recipient)
+            print_mail(title, changed_courses[course_key], recipient)
 
 
 def _send_mail(title, message, recipient):

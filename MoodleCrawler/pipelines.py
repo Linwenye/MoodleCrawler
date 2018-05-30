@@ -8,6 +8,7 @@ import pymongo
 from scrapy.exceptions import DropItem
 from MoodleCrawler import mail
 from . import config
+from pprint import pprint
 
 
 class MongoPipeline(object):
@@ -32,6 +33,8 @@ class MongoPipeline(object):
         self.exist_courses = list(self.collection.find())
 
     def close_spider(self, spider):
+        # TODO: change the crawled set in home_crawler.py, and send_mail at once when closing spider.
+        # TODO: Maintain coursekey-message dict and coursekey-user dict in mail.py
         self.client.close()
 
     def process_item(self, item, spider):
@@ -66,18 +69,25 @@ class MongoPipeline(object):
                             list_new = sub_new['children']
                             if sub_exist:
                                 list_exist = sub_exist['children']
+                                list_exist_name = []
+                                for item_course in list_exist:
+                                    list_exist_name.append(item_course['name'])
                             else:
                                 list_exist = []
+                                list_exist_name = []
                             for tt in list_new:
                                 if tt not in list_exist:
-                                    new_message = "- 新的" + sub_new['name'] + ': ' + tt['name'] + '   链接：' + tt['link']
-                                    mail_body = mail_body + '\n' + new_message
-                                    # print(new_message)
+                                    if tt['name'] not in list_exist_name:
+                                        new_message = "- 新的" + sub_new['name'] + ': ' \
+                                                      + tt['name'] + '   链接：' + tt['link']
+                                        mail_body = mail_body + '\n' + new_message
+                                        # print(new_message)
 
                     # send the email to inform
                     if new_message:
                         mail.send_mail("Moodle Update", item['email'], item['key'], mail_body)
-
+                        pprint(existed)
+                        pprint(item)
                     # if changed, delete the former one and insert new
                     self.collection.delete_one({'key': item['key']})
                     del item['email']
