@@ -25,7 +25,7 @@ class HomeCrawler(scrapy.Spider):
         for i, user in enumerate(self.users):
             recipient = user['email']
             print(user['email'])
-            request = FormRequest(url='http://218.94.159.99/login/index.php',
+            request = FormRequest(url='http://219.219.120.72/login/index.php',
                                   formdata={
                                       'username': user['email'],
                                       'password': utils.decrypt(user['password']),
@@ -52,7 +52,7 @@ class HomeCrawler(scrapy.Spider):
                 mail.send_mail("MoodleUpdate", response.meta['recipient'], course_id)
                 # continue
             else:
-                request = FormRequest(url='http://218.94.159.99/lib/ajax/getnavbranch.php',
+                request = FormRequest(url='http://219.219.120.72/lib/ajax/getnavbranch.php',
                                       formdata={
                                           'elementid': element_id,
                                           'id': course_id,
@@ -84,7 +84,7 @@ class HomeCrawler(scrapy.Spider):
             if child['requiresajaxloading']:
                 element_id = child['id']
 
-                request = FormRequest(url='http://218.94.159.99/lib/ajax/getnavbranch.php',
+                request = FormRequest(url='http://219.219.120.72/lib/ajax/getnavbranch.php',
                                       formdata={
                                           'elementid': element_id,
                                           'id': element_id.split('_')[-1],
