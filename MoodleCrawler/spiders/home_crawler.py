@@ -111,14 +111,15 @@ class HomeCrawler(scrapy.Spider):
         if 'children' in branch_dict.keys():
             # TODO add diretory scrapying and
             for item_sub2 in branch_dict['children']:
-                course_sub2 = CourseItem()
-                if isinstance(item_sub2, str):
-                    course_sub2['name'] = item_sub2
-                else:
-                    course_sub2['name'] = item_sub2['name']
-                    course_sub2['key'] = item_sub2['key']
-                    course_sub2['link'] = item_sub2['link']
-                course_sub1['children'].append(dict(course_sub2))
+                if item_sub2:
+                    course_sub2 = CourseItem()
+                    if isinstance(item_sub2, str):
+                        course_sub2['name'] = item_sub2
+                    else:
+                        course_sub2['name'] = item_sub2['name']
+                        course_sub2['key'] = item_sub2['key']
+                        course_sub2['link'] = item_sub2['link']
+                    course_sub1['children'].append(dict(course_sub2))
         course['children'].append(dict(course_sub1))
         if response.meta['lenth'] - 2 == len(course['children']):  # sub the two not ajax
             # pprint.pprint(course)
